@@ -1,0 +1,6 @@
+# Webstorm project files
+.idea/
+# Project dependecy files
+node_modules/
+# Enviroment variables
+.env
