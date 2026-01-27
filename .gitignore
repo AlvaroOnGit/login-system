@@ -4,3 +4,7 @@
 node_modules/
 # Enviroment variables
 .env
+# Local db files
+localdb/
+# Testing files
+api.http
