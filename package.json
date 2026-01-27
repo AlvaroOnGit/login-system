@@ -1,0 +1,11 @@
+{
+  "name": "login-system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "express": "5.2.1"
+  }
+}
