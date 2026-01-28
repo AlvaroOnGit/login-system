@@ -8,7 +8,7 @@ export const createUserRouter = ({ userModel }) => {
     const userController = new UserController({ userModel });
 
     //Declare endpoints
-    userRouter.post('/login', (req, res) => {});
+    userRouter.post('/login', userController.logUser);
     userRouter.post('/register', userController.createUser);
     userRouter.post('/logout', (req, res) => {})
     userRouter.get('/protected', (req, res) => {})
