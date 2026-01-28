@@ -9,11 +9,32 @@ export class UserController {
     }
 
     logUser = async (req, res) => {
+        // Validate user input
+        const result = validateUser(req.body);
 
+        if (!result.success) {
+            return res.status(400).json({error: JSON.parse(result.error.message)});
+        }
+
+        const { email, password } = result.data
+        // Get the user id if the email exists
+        const userId = await this.userModel.getId({ email })
+
+        if (!userId) {
+            return res.status(400).json({message: 'User not found'});
+        }
+        //Get the hashed password from the user id
+        const hashedPassword = await this.userModel.getPassword({ id: userId })
+        //Call the PasswordManager to verify the password with the hashed password
+        const passwordIsValid = await PasswordManager.verifyPassword(hashedPassword, password)
+
+        if (!passwordIsValid) {
+            return res.status(401).json({message: 'Password does not match'});
+        }
+        return res.status(200).json({message: 'Successfully logged in'});
     }
 
     createUser = async (req, res) => {
-
         // Validate user input
         const result = validateUser(req.body);
 
