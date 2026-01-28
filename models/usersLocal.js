@@ -9,7 +9,7 @@ export class userModel {
     static async getByUsername({ username }) {
 
         const res = await connection.query(
-            'SELECT username FROM users WHERE LOWER(username) = LOWER($1)', [username]
+            'SELECT id, username FROM users WHERE LOWER(username) = LOWER($1)', [username]
         )
 
         return res.rows[0] ?? null;
@@ -23,14 +23,24 @@ export class userModel {
                 [username, email]
             )
             return res.rows[0] ?? null;
-        }
-        catch (e) {
+
+        } catch (e) {
             throw new Error(e);
         }
     }
 
-    static async createUser ({ data }) {
+    static async createUser ({ username, email, password }) {
 
+        try{
+            const res = await connection.query(
+                'INSERT INTO users(username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
+                [username, email, password]
+            )
+            return res.rows[0];
+
+        } catch(e){
+            throw new Error(e);
+        }
     }
 
     static async updateUser({ id, data }) {

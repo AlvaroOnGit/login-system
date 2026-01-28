@@ -1,4 +1,5 @@
 import { validateUser } from "../schemas/validators.js";
+import { PasswordManager } from "../utils/passwordManager.js";
 
 
 export class UserController {
@@ -20,7 +21,7 @@ export class UserController {
             return res.status(400).json({error: JSON.parse(result.error.message)});
         }
 
-        const { username, email } = result.data
+        const { username, email, password } = result.data
 
         // Check if the username or email already exists
         const userExists = await this.userModel.userExistsByUsernameOrEmail({username, email});
@@ -49,8 +50,28 @@ export class UserController {
             return res.status(409).json({ message });
         }
 
+        // Call the PasswordManager class to hash the password
+        const hashedPassword = await PasswordManager.hashPassword(password);
+
+        if (!hashedPassword) {
+            return res.status(400).json({message: "Could not validate password"});
+        }
+
+        // Create a new object containing the hashed password
+        const hashedData = {
+            username: username,
+            email: email,
+            password: hashedPassword,
+        }
+
         // Create the user on the database
-        const newUser = await this.userModel.createUser({data: result.data })
+        const newUser = await this.userModel.createUser( hashedData )
+
+        if (!newUser) {
+            return res.status(400).json({message: "Could not create a new user"});
+        }
+
+        return res.status(201).json(newUser);
     }
 
 }
