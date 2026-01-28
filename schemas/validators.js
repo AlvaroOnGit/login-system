@@ -24,6 +24,10 @@ const userSchema = z.object({
 
 });
 
+export function validatePassword (password) {
+    return passwordSchema.safeParse(password);
+}
+
 export function validateUser (object) {
     return userSchema.safeParse(object);
 }
