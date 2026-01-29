@@ -1,6 +1,7 @@
 import express from 'express';
-import { createUserRouter } from "./routes/users.js";
-import { userModel } from "./models/usersLocal.js";
+import { createViewRouter } from "./routes/view.routes.js";
+import { createAuthRouter } from "./routes/auth.routes.js";
+import { userModel } from "./models/user.model.js";
 
 export const createApp = () => {
 
@@ -9,12 +10,8 @@ export const createApp = () => {
     app.disable('x-powered-by');
     app.use(express.json());
 
-    app.get('/', (req, res) => {
-        res.end('<h1>Main Page</h1>');
-    })
-
-    app.use('/users', createUserRouter({ userModel }));
-    //Declare endpoints
+    app.use('/', createViewRouter());
+    app.use('/api/auth', createAuthRouter({ userModel }));
 
     return app;
 }
