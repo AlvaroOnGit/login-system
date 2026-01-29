@@ -1,10 +1,11 @@
+import path from 'node:path';
 
 export class ViewController {
 
     index = (req, res) => {
-        res.end('<h1>Main Page</h1>');
+        res.sendFile(path.join(path.resolve(), 'views', 'index.html'));
     }
     login = (req, res) => {
-        res.end('<h1>Login</h1>');
+        res.sendFile(path.join(path.resolve(), 'views', 'auth.html'));
     }
 }
