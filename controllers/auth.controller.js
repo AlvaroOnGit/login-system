@@ -1,8 +1,7 @@
 import { validateUser } from "../schemas/validators.js";
 import { PasswordManager } from "../utils/passwordManager.js";
 
-
-export class UserController {
+export class AuthController {
 
     constructor({ userModel }) {
         this.userModel = userModel;
@@ -33,7 +32,6 @@ export class UserController {
         }
         return res.status(200).json({message: 'Successfully logged in'});
     }
-
     createUser = async (req, res) => {
         // Validate user input
         const result = validateUser(req.body);
@@ -94,5 +92,4 @@ export class UserController {
 
         return res.status(201).json(newUser);
     }
-
 }
