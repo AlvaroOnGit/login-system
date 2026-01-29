@@ -1,4 +1,4 @@
-// Logic to access a local database
+// Logic for API calls to local user db
 
 import { Pool } from 'pg';
 
