@@ -1,0 +1,28 @@
+body {
+    margin: 0;
+}
+header nav a {
+    text-decoration: none;
+}
+header nav {
+    background-color: #232733;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+}
+#webTitle {
+    margin: 0;
+    color: #d5d5d5;
+}
+#loginBtn {
+    background-color: #5e5e5e;
+    color: #d5d5d5;
+    font-size: 20px;
+    font-weight: bold;
+    margin: auto;
+    padding: 7px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
