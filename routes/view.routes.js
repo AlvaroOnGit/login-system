@@ -9,7 +9,7 @@ export const createViewRouter = () => {
 
     //declare endpoints
     viewRouter.get('/', viewController.index)
-    viewRouter.get('/auth/login', viewController.login);
+    viewRouter.get('/auth', viewController.login);
 
     return viewRouter;
 }
