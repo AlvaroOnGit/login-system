@@ -1,4 +1,4 @@
-import { validateUser } from "../schemas/validators.js";
+import {validateLogin, validateUser} from "../schemas/validators.js";
 import { PasswordManager } from "../utils/passwordManager.js";
 
 export class AuthController {
@@ -9,12 +9,11 @@ export class AuthController {
 
     logUser = async (req, res) => {
         // Validate user input
-        const result = validateUser(req.body);
+        const result = validateLogin(req.body);
 
         if (!result.success) {
             return res.status(400).json({error: JSON.parse(result.error.message)});
         }
-
         const { email, password } = result.data
         // Get the user id if the email exists
         const userId = await this.userModel.getId({ email })
@@ -54,15 +53,15 @@ export class AuthController {
 
             switch (true){
                 case username_match && email_match:
-                    message = "Username & email already in use";
+                    message = "username-email-match";
                     break;
 
                 case username_match:
-                    message = "Username already in use";
+                    message = "username-match";
                     break;
 
                 case email_match:
-                    message = "Email already in use";
+                    message = "email-match";
                     break;
             }
 
