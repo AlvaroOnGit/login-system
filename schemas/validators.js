@@ -16,6 +16,11 @@ const passwordSchema = z
         message: 'Password must contain a symbol.'
     })
 
+const loginSchema = z.object({
+    email: z.email({message: 'Invalid email format'}),
+    password: passwordSchema
+})
+
 const userSchema = z.object({
 
     username: z.string().min(3, {message: 'Username must be at least 3 characters long.'}),
@@ -23,6 +28,10 @@ const userSchema = z.object({
     password: passwordSchema,
 
 });
+
+export function validateLogin (object) {
+    return loginSchema.safeParse(object);
+}
 
 export function validatePassword (password) {
     return passwordSchema.safeParse(password);
