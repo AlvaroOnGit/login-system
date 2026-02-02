@@ -10,7 +10,8 @@ export const createAuthRouter = ({ userModel }) => {
     //Declare endpoints
     authRouter.post('/login', authController.logUser);
     authRouter.post('/register', authController.createUser);
-    //authRouter.post('/logout', (req, res) => {})
+    authRouter.post('/logout', authController.logout);
+    authRouter.get('/session', authController.authSession);
 
     return authRouter;
 }
