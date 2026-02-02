@@ -12,7 +12,9 @@ export class userModel {
             'SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]
         )
 
-        return res.rows[0].id ?? null;
+        if (res.rows.length === 0) return null;
+
+        return res.rows[0].id;
     }
 
     static async getPassword({ id }) {
@@ -21,7 +23,10 @@ export class userModel {
             'SELECT password FROM users WHERE id = $1',
             [id]
         )
-        return res.rows[0].password ?? null;
+
+        if (res.rows.length === 0) return null;
+
+        return res.rows[0].password;
     }
 
     static async userExistsByUsernameOrEmail({ username, email }) {
