@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import {validateLogin, validateUser} from "../schemas/validators.js";
 import { PasswordManager } from "../utils/passwordManager.js";
 
@@ -8,29 +9,48 @@ export class AuthController {
     }
 
     logUser = async (req, res) => {
-        // Validate user input
-        const result = validateLogin(req.body);
 
-        if (!result.success) {
-            return res.status(400).json({error: JSON.parse(result.error.message)});
-        }
-        const { email, password } = result.data
-        // Get the user id if the email exists
-        const userId = await this.userModel.getId({ email })
+        try{
+           // Validate user input
+           const result = validateLogin(req.body);
 
-        if (!userId) {
-            return res.status(400).json({message: 'User not found'});
-        }
-        //Get the hashed password from the user id
-        const hashedPassword = await this.userModel.getPassword({ id: userId })
-        //Call the PasswordManager to verify the password with the hashed password
-        const passwordIsValid = await PasswordManager.verifyPassword(hashedPassword, password)
+           if (!result.success) return res.status(400).json({error: JSON.parse(result.error.message)});
+           const { email, password: inputPassword } = result.data
 
-        if (!passwordIsValid) {
-            return res.status(401).json({message: 'Password does not match'});
-        }
-        return res.status(200).json({message: 'Successfully logged in'});
+           // Get the user if the email exists
+           const user = await this.userModel.getUser({ email })
+           if (!user) return res.status(400).json({error: 'User not found'});
+
+           const { id, username, password: hashedPassword } = user
+
+           //Call the PasswordManager to verify the password with the hashed password
+           const passwordIsValid = await PasswordManager.verifyPassword(hashedPassword, inputPassword);
+           if (!passwordIsValid) return res.status(401).json({error: 'Password does not match'});
+
+           // Create a jwt for the user
+           const token = jwt.sign(
+               { id: id, username: username, email: email },
+               process.env.JWT_SECRET_KEY,
+               {expiresIn: process.env.JWT_EXPIRES}
+           );
+
+           console.log(`User logged with id: ${id}`);
+           return res
+               .status(200)
+               .cookie('access_token', token, {
+                   httpOnly: true,
+                   secure: process.env.NODE_ENV === 'production',
+                   sameSite: 'strict',
+                   maxAge: 1000 * 60 * 60
+               })
+               .json({username, token});
+       }
+       catch (e) {
+           console.error(e)
+           return res.status(500).json({error: 'Internal server Error'});
+       }
     }
+
     createUser = async (req, res) => {
         // Validate user input
         const result = validateUser(req.body);
@@ -90,5 +110,23 @@ export class AuthController {
         }
 
         return res.status(201).json(newUser);
+    }
+
+    logout = async (req, res) => {
+        res
+            .status(200)
+            .clearCookie('access_token')
+            .json({message: 'User logged out'})
+    }
+
+    authSession = async (req, res) => {
+
+        const { user } = req.session;
+
+        if (!user) {
+            return res.status(400).json({error: 'No user session'});
+        }
+
+        res.status(200).json({ user });
     }
 }
