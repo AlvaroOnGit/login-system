@@ -6,27 +6,15 @@ const connection = new Pool();
 
 export class userModel {
 
-    static async getId({ email }) {
-
+    static async getUser({ email }) {
         const res = await connection.query(
-            'SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]
+            'SELECT id, username, email, password FROM users WHERE email = $1',
+            [email]
         )
 
         if (res.rows.length === 0) return null;
 
-        return res.rows[0].id;
-    }
-
-    static async getPassword({ id }) {
-
-        const res = await connection.query(
-            'SELECT password FROM users WHERE id = $1',
-            [id]
-        )
-
-        if (res.rows.length === 0) return null;
-
-        return res.rows[0].password;
+        return res.rows[0];
     }
 
     static async userExistsByUsernameOrEmail({ username, email }) {

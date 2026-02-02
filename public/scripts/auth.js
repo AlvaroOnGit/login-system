@@ -1,6 +1,7 @@
 const authForm = document.getElementById("authForm");
 const toggleForm = document.getElementById("toggleForm");
-const submitButton = document.querySelector(".submit-btn");
+const usernameGroup = document.getElementById("usernameGroup");
+const usernameInput = document.getElementById("username");
 
 class WarningHandler {
 
@@ -29,9 +30,36 @@ class WarningHandler {
         })
     }
 }
+class SubmitButtonHandler {
+
+    static submitButton = document.querySelector(".submit-btn");
+    static isWaiting = false;
+
+    static #enableAfterDelay (delay) {
+        setTimeout(() => {
+            this.isWaiting = false;
+            this.submitButton.classList.remove('inactive');
+            this.submitButton.disabled = false;
+        }, delay);
+    }
+
+    static disableSubmitButton () {
+        this.isWaiting = true;
+        this.submitButton.disabled = true;
+        this.submitButton.classList.add('inactive');
+    }
+    static enableSubmitButton (status) {
+
+        if ( status === "login-success" ||  status === "register-success" ) {
+            this.#enableAfterDelay(1000);
+        }
+        else if ( status === "login-error" ||  status === "register-error" ) {
+            this.#enableAfterDelay(3000);
+        }
+    }
+}
 
 let isLogin = true;
-let isWaiting = false;
 
 toggleForm.addEventListener("click", event => {
 
@@ -44,22 +72,20 @@ toggleForm.addEventListener("click", event => {
 
 function updateForm() {
 
-    const usernameGroup = document.getElementById("usernameGroup");
-
     if (!isLogin) {
         usernameGroup.classList.add('show');
-        usernameGroup.required = true;
-        usernameGroup.disabled = false;
+        usernameInput.required = true;
+        usernameInput.disabled = false;
     }
     else {
-        document.getElementById("username").value = "";
+        usernameInput.value = "";
         usernameGroup.classList.remove('show');
-        usernameGroup.required = false;
-        usernameGroup.disabled = true;
+        usernameInput.required = false;
+        usernameInput.disabled = true;
     }
 
     document.querySelector(".form-title").textContent = isLogin ? "Iniciar Sesión" : "Crear Cuenta";
-    submitButton.textContent = isLogin ? "Iniciar Sesión" : "Registrarse";
+    SubmitButtonHandler.submitButton.textContent = isLogin ? "Iniciar Sesión" : "Registrarse";
     toggleForm.textContent = isLogin ? "¿No tienes cuenta? Regístrate" : "¿Tienes cuenta? Inicia Sesión";
 }
 
@@ -67,33 +93,18 @@ authForm.addEventListener("submit", async event => {
 
     event.preventDefault();
 
-    if (isWaiting) return;
+    if (SubmitButtonHandler.isWaiting) return;
 
-    isWaiting = true;
-    submitButton.disabled = true;
-    submitButton.classList.add('inactive');
+    SubmitButtonHandler.disableSubmitButton();
 
-    const formData = new FormData(authForm);
-
-    const data = {
-        username: formData.get("username"),
-        email: formData.get("email"),
-        password: formData.get("password"),
-    }
-
+    const data = Object.fromEntries(new FormData(authForm));
     const jsonData = JSON.stringify(data);
 
     WarningHandler.hideWarnings();
 
-    const success = await submitAuthForm(jsonData);
+    const status = await submitAuthForm(jsonData);
 
-    if (!success) {
-        setTimeout(() => {
-            isWaiting = false;
-            submitButton.classList.remove('inactive');
-            submitButton.disabled = false;
-        }, 3000);
-    }
+    SubmitButtonHandler.enableSubmitButton(status);
 })
 
 async function submitAuthForm(jsonData) {
@@ -108,13 +119,15 @@ async function submitAuthForm(jsonData) {
 
             if (!res.ok) {
                 WarningHandler.passwordWarning('Invalid credentials');
-                return false;
+                return 'login-error';
             }
 
             window.location.replace('/');
+            return 'login-success';
 
         } catch (e) {
             console.error(e);
+            return 'login-error';
         }
     }
     else {
@@ -132,20 +145,31 @@ async function submitAuthForm(jsonData) {
                     case "username-email-match": {
                         WarningHandler.usernameWarning('Username already exists')
                         WarningHandler.emailWarning('Email already exists')
-                        return;
+                        return 'register-error';
                     }
                     case "email-match": {
                         WarningHandler.emailWarning('Email already exists')
-                        return;
+                        return 'register-error';
                     }
                     case "username-match": {
                         WarningHandler.usernameWarning('Username already exists')
-                        return;
+                        return 'register-error';
+                    }
+                    default: {
+                        return 'register-error';
                     }
                 }
             }
+
+            isLogin = !isLogin;
+
+            updateForm();
+
+            return 'register-success';
+
         } catch (e) {
             console.error(e);
+            return 'register-error';
         }
     }
 }
