@@ -82,6 +82,10 @@ header nav {
 .submit-btn:hover{
     background-color: #6889ea;
 }
+.submit-btn.inactive{
+    background-color: #c6c6c6;
+    cursor: not-allowed;
+}
 #usernameGroup.show {
     display: flex;
 }

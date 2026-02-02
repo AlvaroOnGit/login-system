@@ -1,5 +1,6 @@
 const authForm = document.getElementById("authForm");
 const toggleForm = document.getElementById("toggleForm");
+const submitButton = document.querySelector(".submit-btn");
 
 class WarningHandler {
 
@@ -30,6 +31,7 @@ class WarningHandler {
 }
 
 let isLogin = true;
+let isWaiting = false;
 
 toggleForm.addEventListener("click", event => {
 
@@ -47,20 +49,29 @@ function updateForm() {
     if (!isLogin) {
         usernameGroup.classList.add('show');
         usernameGroup.required = true;
+        usernameGroup.disabled = false;
     }
     else {
+        document.getElementById("username").value = "";
         usernameGroup.classList.remove('show');
         usernameGroup.required = false;
+        usernameGroup.disabled = true;
     }
 
     document.querySelector(".form-title").textContent = isLogin ? "Iniciar Sesión" : "Crear Cuenta";
-    document.querySelector(".submit-btn").textContent = isLogin ? "Iniciar Sesión" : "Registrarse";
+    submitButton.textContent = isLogin ? "Iniciar Sesión" : "Registrarse";
     toggleForm.textContent = isLogin ? "¿No tienes cuenta? Regístrate" : "¿Tienes cuenta? Inicia Sesión";
 }
 
 authForm.addEventListener("submit", async event => {
 
     event.preventDefault();
+
+    if (isWaiting) return;
+
+    isWaiting = true;
+    submitButton.disabled = true;
+    submitButton.classList.add('inactive');
 
     const formData = new FormData(authForm);
 
@@ -72,9 +83,17 @@ authForm.addEventListener("submit", async event => {
 
     const jsonData = JSON.stringify(data);
 
-    WarningHandler.hideWarnings()
+    WarningHandler.hideWarnings();
 
-    await submitAuthForm(jsonData);
+    const success = await submitAuthForm(jsonData);
+
+    if (!success) {
+        setTimeout(() => {
+            isWaiting = false;
+            submitButton.classList.remove('inactive');
+            submitButton.disabled = false;
+        }, 3000);
+    }
 })
 
 async function submitAuthForm(jsonData) {
@@ -89,7 +108,7 @@ async function submitAuthForm(jsonData) {
 
             if (!res.ok) {
                 WarningHandler.passwordWarning('Invalid credentials');
-                return;
+                return false;
             }
 
             window.location.replace('/');
