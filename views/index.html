@@ -13,14 +13,26 @@
             </a>
             <div class="button-container">
             <a href="/auth">
-                <button id="loginBtn" class="auth-button">Iniciar Sesión</button>
-            </a>>
-                <button id="logoutBtn" class="auth-button" hidden>Cerrar Sesión</button>
+                <button id="loginBtn" class="nav-button">Iniciar Sesión</button>
+            </a>
+            <a href="/protected">
+                <button id="profileBtn" class="nav-button" hidden>Perfil</button>
+            </a>
             </div>
         </nav>
     </header>
     <main>
     </main>
     <script src="/scripts/index.js"></script>
+    <script type="module">
+        import { getSession } from "/scripts/session.js";
+
+        const session = await getSession();
+
+        if (session) {
+            document.getElementById("loginBtn").hidden = true;
+            document.getElementById("profileBtn").hidden = false;
+        }
+    </script>
 </body>
 </html>
