@@ -9,7 +9,7 @@ export const accessTokenMiddleware = (req, res, next) => {
     if (!token) return next();
 
     try {
-        req.session.user = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        req.session.user = jwt.verify(token, process.env.JWT_ACCESS_SECRET_KEY);
     }
     catch {}
     next();

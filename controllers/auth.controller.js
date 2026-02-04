@@ -11,43 +11,61 @@ export class AuthController {
     logUser = async (req, res) => {
 
         try{
-           // Validate user input
-           const result = validateLogin(req.body);
+            // Validate user input
+            const result = validateLogin(req.body);
 
-           if (!result.success) return res.status(400).json({error: JSON.parse(result.error.message)});
-           const { email, password: inputPassword } = result.data
+            if (!result.success) return res.status(400).json({error: JSON.parse(result.error.message)});
+            const { email, password: inputPassword } = result.data
 
-           // Get the user if the email exists
-           const user = await this.userModel.getUser({ email })
-           if (!user) return res.status(400).json({error: 'User not found'});
+            // Get the user if the email exists
+            const user = await this.userModel.getUser({ email })
+            if (!user) return res.status(400).json({error: 'User not found'});
 
-           const { id, username, password: hashedPassword } = user
+            const { id, username, password: hashedPassword } = user
 
-           //Call the PasswordManager to verify the password with the hashed password
-           const passwordIsValid = await PasswordManager.verifyPassword(hashedPassword, inputPassword);
-           if (!passwordIsValid) return res.status(401).json({error: 'Password does not match'});
+            //Call the PasswordManager to verify the password with the hashed password
+            const passwordIsValid = await PasswordManager.verifyPassword(hashedPassword, inputPassword);
+            if (!passwordIsValid) return res.status(401).json({error: 'Password does not match'});
 
-           // Create a jwt for the user
-           const token = jwt.sign(
-               { id: id, username: username, email: email },
-               process.env.JWT_SECRET_KEY,
-               {expiresIn: process.env.JWT_EXPIRES}
-           );
+            // Create an access token and a refresh token for the user
+            const accessToken = jwt.sign(
+                { id: id, username: username, email: email },
+                process.env.JWT_ACCESS_SECRET_KEY,
+                { expiresIn: process.env.JWT_ACCESS_EXPIRES }
+            );
 
-           console.log(`User logged with id: ${id}`);
-           return res
-               .status(200)
-               .cookie('access_token', token, {
-                   httpOnly: true,
-                   secure: process.env.NODE_ENV === 'production',
-                   sameSite: 'strict',
-                   maxAge: 1000 * 60 * 60
-               })
-               .json({username, token});
+            const refreshToken = jwt.sign(
+                { id: id, username: username, email: email },
+                process.env.JWT_REFRESH_SECRET_KEY,
+                { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+            );
+
+            // Save the refreshToken on the db as well as its expiration date
+            const refreshTokenExpiration = new Date
+            (Date.now() + process.env.JWT_REFRESH_TOKEN_LIFETIME * 24 * 60 * 60 *1000);
+            await this.userModel.saveRefreshToken({ id, refreshToken, refreshTokenExpiration });
+
+            console.log(`User logged with id: ${id}`);
+
+            return res
+                .status(200)
+                .cookie('access_token', accessToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    maxAge: 15 * 60 * 1000
+                })
+                .cookie('refresh_token', refreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    maxAge: 7 * 24 * 60 * 60 * 1000
+                })
+                .json({message: 'User logged successfully.'});
        }
        catch (e) {
-           console.error(e)
-           return res.status(500).json({error: 'Internal server Error'});
+            console.error(e)
+            return res.status(500).json({error: 'Internal server Error'});
        }
     }
 
@@ -116,6 +134,7 @@ export class AuthController {
         res
             .status(200)
             .clearCookie('access_token')
+            .clearCookie('refresh_token')
             .json({message: 'User logged out'})
     }
 
@@ -128,5 +147,49 @@ export class AuthController {
         }
 
         res.status(200).json({ user });
+    }
+
+    refresh = async (req, res) => {
+
+        // Get the refresh token from the request
+        const refreshToken = req.cookies.refresh_token;
+
+        if (!refreshToken) {
+            return res.status(401).json({error: 'Refresh token not found'});
+        }
+
+        //Verify the validity of the token on db
+        const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY);
+
+        const isTokenValid= await this.userModel.checkRefreshToken({ id: payload.id, refreshToken });
+
+        //If the token is not valid, clear it from cookie
+        if (!isTokenValid) {
+            return res
+                .status(401)
+                .clearCookie('refresh_token')
+                .json({error: 'Refresh token is invalid'});
+        }
+
+        //If the token is valid, create a new access_token
+        try {
+            const accessToken = jwt.sign(
+                { id: payload.id, username: payload.username, email: payload.email },
+                process.env.JWT_ACCESS_SECRET_KEY,
+                { expiresIn: process.env.JWT_ACCESS_EXPIRES }
+            );
+            res
+                .status(200)
+                .cookie('access_token', accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 15 * 60 * 1000
+                })
+                .json({message: 'Token refreshed successfully.'});
+        }
+        catch (e) {
+            res.status(500).json({error: 'Internal server Error'});
+        }
     }
 }

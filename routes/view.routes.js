@@ -10,6 +10,7 @@ export const createViewRouter = () => {
     //declare endpoints
     viewRouter.get('/', viewController.index)
     viewRouter.get('/auth', viewController.login);
+    viewRouter.get('/protected', viewController.protected);
 
     return viewRouter;
 }

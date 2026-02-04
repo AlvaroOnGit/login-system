@@ -12,6 +12,7 @@ export const createAuthRouter = ({ userModel }) => {
     authRouter.post('/register', authController.createUser);
     authRouter.post('/logout', authController.logout);
     authRouter.get('/session', authController.authSession);
+    authRouter.get('/refresh', authController.refresh);
 
     return authRouter;
 }
